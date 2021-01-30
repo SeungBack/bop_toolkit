@@ -13,15 +13,19 @@ from bop_toolkit_lib import misc
 from bop_toolkit_lib import renderer
 from bop_toolkit_lib import visibility
 
+import yaml
+path_to_category_id_path = "/home/seung/Workspace/datasets/UOIS/aumask/bop_data/path_to_category_id.yaml"
+with open(path_to_category_id_path, 'r') as f:
+  path_to_category_id = yaml.safe_load(f)   
 
 # PARAMETERS.
 ################################################################################
 p = {
   # See dataset_params.py for options.
-  'dataset': 'lm',
+  'dataset': 'bop_data',
 
   # Dataset split. Options: 'train', 'val', 'test'.
-  'dataset_split': 'test',
+  'dataset_split': 'train_pbr',
 
   # Dataset split type. None = default. See dataset_params.py for options.
   'dataset_split_type': None,
@@ -33,23 +37,26 @@ p = {
   'renderer_type': 'python',  # Options: 'cpp', 'python'.
 
   # Folder containing the BOP datasets.
-  'datasets_path': config.datasets_path,
+  'bop_path': "/home/seung/BOP",
+
+  # Folder containing the Rendered datasets.
+  'datasets_path': "/home/seung/Workspace/datasets/UOIS/aumask/bop_data/bin"
 }
 ################################################################################
 
+bin_id = 5000
 
 # Load dataset parameters.
 dp_split = dataset_params.get_split_params(
   p['datasets_path'], p['dataset'], p['dataset_split'], p['dataset_split_type'])
-
 model_type = None
 if p['dataset'] == 'tless':
   model_type = 'cad'
 dp_model = dataset_params.get_model_params(
-  p['datasets_path'], p['dataset'], model_type)
+  p['bop_path'], p['dataset'], model_type)
 
 scene_ids = dataset_params.get_present_scene_ids(dp_split)
-for scene_id in scene_ids:
+for scene_id in dp_split["scene_ids"]:
 
   # Load scene GT.
   scene_gt_path = dp_split['scene_gt_tpath'].format(
@@ -78,10 +85,7 @@ for scene_id in scene_ids:
   ren = renderer.create_renderer(
     width, height, renderer_type=p['renderer_type'], mode='depth')
 
-  # Add object models.
-  for obj_id in dp_model['obj_ids']:
-    ren.add_object(obj_id, dp_model['model_tpath'].format(obj_id=obj_id))
-
+  
   im_ids = sorted(scene_gt.keys())
   for im_id in im_ids:
 
@@ -101,7 +105,30 @@ for scene_id in scene_ids:
     depth_im *= scene_camera[im_id]['depth_scale']  # to [mm]
     dist_im = misc.depth_im_to_dist_im(depth_im, K)
 
+    # SHSH load used obj id
+    id_used = []
+    for gt in scene_gt[im_id]:
+      if gt['obj_id'] == bin_id: 
+        continue
+      if gt['obj_id'] not in id_used:
+        id_used.append(gt['obj_id'])
+    print(id_used)
+    # Add object models.
+    for obj_id in id_used:
+      for model_path, category_id in path_to_category_id.items():
+        if category_id == obj_id:
+          # model_path = p['bop_path'] + '/' + model_path
+          model_path = '/home/seung/' + model_path
+          break
+      print("==>", obj_id, model_path)
+      ren.add_object(obj_id, model_path)
+      # ren.add_object(obj_id, dp_model['model_tpath'].format(obj_id=obj_id))
+
+
+
     for gt_id, gt in enumerate(scene_gt[im_id]):
+      if gt['obj_id'] == bin_id:
+        continue
 
       # Render the depth image.
       depth_gt = ren.render_object(

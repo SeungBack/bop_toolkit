@@ -7,13 +7,14 @@ from bop_toolkit_lib import config
 from bop_toolkit_lib import dataset_params
 from bop_toolkit_lib import inout
 from bop_toolkit_lib import misc
-
+import numpy as np
+from tqdm import tqdm
 
 # PARAMETERS.
 ################################################################################
 p = {
   # See dataset_params.py for options.
-  'dataset': 'lm',
+  'dataset': 'kit',
 
   # Type of input object models.
   'model_type': None,
@@ -29,14 +30,14 @@ dp_model = dataset_params.get_model_params(
   p['datasets_path'], p['dataset'], p['model_type'])
 
 models_info = {}
-for obj_id in dp_model['obj_ids']:
+for obj_id in tqdm(dp_model['obj_ids']):
     misc.log('Processing model of object {}...'.format(obj_id))
-
     model = inout.load_ply(dp_model['model_tpath'].format(obj_id=obj_id))
-
     # Calculate 3D bounding box.
     ref_pt = map(float, model['pts'].min(axis=0).flatten())
+    ref_pt = np.fromiter(ref_pt, np.float64)
     size = map(float, (model['pts'].max(axis=0) - ref_pt).flatten())
+    size = np.fromiter(size, np.float64)
 
     # Calculated diameter.
     diameter = misc.calc_pts_diameter(model['pts'])

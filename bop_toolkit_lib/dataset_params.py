@@ -7,9 +7,7 @@ import math
 import glob
 import os
 from os.path import join
-
 from bop_toolkit_lib import inout
-
 
 def get_camera_params(datasets_path, dataset_name, cam_type=None):
   """Returns camera parameters for the specified dataset.
@@ -71,6 +69,8 @@ def get_model_params(datasets_path, dataset_name, model_type=None):
   :param model_type: Type of object models.
   :return: Dictionary with object model parameters for the specified dataset.
   """
+
+
   # Object ID's.
   obj_ids = {
     'lm': list(range(1, 16)),
@@ -86,6 +86,9 @@ def get_model_params(datasets_path, dataset_name, model_type=None):
     'hb': list(range(1, 34)),  # Full HB dataset.
     'ycbv': list(range(1, 22)),
     'hope': list(range(1, 29)),
+    'kit': list(range(1, 120)),
+    'bop_data': list(range(1, 2000))
+
   }[dataset_name]
 
   # ID's of objects with ambiguous views evaluated using the ADI pose error
@@ -103,7 +106,9 @@ def get_model_params(datasets_path, dataset_name, model_type=None):
     'hbs': [10, 12, 18, 29],
     'hb': [6, 10, 11, 12, 13, 14, 18, 24, 29],
     'ycbv': [1, 13, 14, 16, 18, 19, 20, 21],
+    'kit': [],
     'hope': None,  # Not defined yet.
+    'bop_data': None,  # Not defined yet.
   }[dataset_name]
 
   # T-LESS includes two types of object models, CAD and reconstructed.
@@ -372,6 +377,34 @@ def get_split_params(datasets_path, dataset_name, split, split_type=None):
       p['depth_range'] = None  # Not calculated yet.
       p['azimuth_range'] = None  # Not calculated yet.
       p['elev_range'] = None  # Not calculated yet.
+
+  elif dataset_name == 'kit':
+      p['scene_ids'] = {
+        'train': list(range(1, 120)),
+        'val': list(range(1, 120)),
+        'test': list(range(1, 120))
+      }[split]
+
+      p['im_size'] = (640, 480)
+
+      if split == 'test':
+        p['depth_range'] = None  # Not calculated yet.
+        p['azimuth_range'] = None  # Not calculated yet.
+        p['elev_range'] = None  # Not calculated yet.
+  elif dataset_name == 'bop_data':
+      p['scene_ids'] = {
+          'train': list(range(1, 100)),
+          'val': list(range(1, 100)),
+          'test': list(range(1, 100)),
+          'train_pbr': list(range(0, 100))
+        }[split]
+
+      p['im_size'] = (640, 480)
+
+      if split == 'test':
+        p['depth_range'] = None  # Not calculated yet.
+        p['azimuth_range'] = None  # Not calculated yet.
+        p['elev_range'] = None  # Not calculated yet.
 
   else:
     raise ValueError('Unknown BOP dataset ({}).'.format(dataset_name))
